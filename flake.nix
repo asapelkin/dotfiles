@@ -44,7 +44,6 @@
           modules = [ ./home.nix ];
         });
 
-      # nix run --impure github:asapelkin/dotfiles#apply
       apps = forAllSystems (system:
         let
           pkgs = import nixpkgs { inherit system; };
