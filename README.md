@@ -24,3 +24,23 @@ cd ~/dotfiles
 bash scripts/apply.sh
 exec zsh
 ```
+
+## Обновление уже настроенной машины (Linux и macOS)
+
+```bash
+cd ~/dotfiles
+git pull --ff-only
+bash scripts/apply.sh
+exec zsh
+```
+
+Обновление версий пакетов и плагинов (отдельно, на одной машине):
+
+```bash
+cd ~/dotfiles
+nix flake update
+bash scripts/apply.sh
+git add flake.lock
+git commit -m 'Update pinned dependencies'
+git push
+```
