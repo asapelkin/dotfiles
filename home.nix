@@ -85,6 +85,11 @@ in
       # only sourced once per environment and may be reordered by login shells.
       (lib.mkOrder 1000 ''
         path=("$HOME/.local/bin" $path)
+
+        mkcd() {
+          mkdir -p "$1"
+          cd "$1"
+        }
       '')
     ];
   };
