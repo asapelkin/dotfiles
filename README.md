@@ -27,3 +27,12 @@ exec zsh
 nix run --impure --refresh github:asapelkin/dotfiles#apply
 exec zsh
 ```
+
+Если репозиторий выкачан локально:
+
+```bash
+cd ~/dotfiles
+git pull --ff-only
+nix run --impure .#apply
+exec zsh
+```
