@@ -6,7 +6,7 @@
 sudo apt update
 sudo apt install -y curl git ca-certificates bash zsh
 curl -sSfL https://artifacts.nixos.org/nix-installer | sh -s -- install --enable-flakes
-# открыть новый терминал
+. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 nix run --impure --extra-experimental-features 'nix-command flakes' github:asapelkin/dotfiles#apply
 exec zsh
 ```
@@ -16,7 +16,7 @@ exec zsh
 ```bash
 xcode-select --install
 curl -sSfL https://artifacts.nixos.org/nix-installer | sh -s -- install --enable-flakes
-# открыть новый терминал
+. /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 nix run --impure --extra-experimental-features 'nix-command flakes' github:asapelkin/dotfiles#apply
 exec zsh
 ```
