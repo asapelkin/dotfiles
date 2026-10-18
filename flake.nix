@@ -36,12 +36,38 @@
           value = f system;
         }) systems);
     in
-    {
+    rec {
       homeConfigurations = forAllSystems (system:
         home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs { inherit system; };
           extraSpecialArgs = { inherit inputs; };
           modules = [ ./home.nix ];
+        });
+
+      # nix run --impure github:asapelkin/dotfiles#apply
+      apps = forAllSystems (system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          apply = pkgs.writeShellScript "apply" ''
+            set -euo pipefail
+            if [ "$(id -u)" -eq 0 ]; then
+              echo 'Do not run as root.' >&2
+              exit 1
+            fi
+            echo "Applying Home Manager configuration (${system}) for $USER in $HOME"
+            ${homeConfigurations.${system}.activationPackage}/activate
+            echo 'Applied. Start a new Zsh session (exec zsh).'
+          '';
+        in
+        {
+          apply = {
+            type = "app";
+            program = "${apply}";
+          };
+          default = {
+            type = "app";
+            program = "${apply}";
+          };
         });
     };
 }
