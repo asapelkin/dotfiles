@@ -11,7 +11,6 @@ git clone https://github.com/OWNER/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 bash scripts/apply.sh
 exec zsh
-bash scripts/verify.sh
 ```
 
 ## macOS
@@ -24,5 +23,4 @@ git clone https://github.com/OWNER/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 bash scripts/apply.sh
 exec zsh
-bash scripts/verify.sh
 ```
