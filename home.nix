@@ -37,6 +37,16 @@ in
 
   home.sessionPath = [ "$HOME/.local/bin" "/home/linuxbrew/.linuxbrew/bin" ];
 
+  # Homebrew is not in nixpkgs; install it with the official script if missing.
+  home.activation.installBrew = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -x /home/linuxbrew/.linuxbrew/bin/brew ] && [ ! -x /opt/homebrew/bin/brew ] && [ ! -x /usr/local/bin/brew ]; then
+      PATH="${lib.makeBinPath [ pkgs.curl pkgs.git pkgs.bash pkgs.coreutils ]}:$PATH" \
+      NONINTERACTIVE=1 \
+        ${pkgs.bash}/bin/bash -c "$(${pkgs.curl}/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+        || echo "Homebrew install failed (needs sudo); install manually." >&2
+    fi
+  '';
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;
