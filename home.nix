@@ -24,12 +24,18 @@ in
     git
     fzf
     python3
+    nodejs
+    vim
   ];
 
-  home.sessionPath = [ "$HOME/.local/bin" ];
   home.sessionVariables = {
     PYTHONPYCACHEPREFIX = "/tmp/pycache";
+    VISUAL = "vim";
+    EDITOR = "vim";
+    LC_ALL = "en_US.utf8";
   };
+
+  home.sessionPath = [ "$HOME/.local/bin" "/home/linuxbrew/.linuxbrew/bin" ];
 
   programs.zsh = {
     enable = true;
@@ -43,6 +49,12 @@ in
 
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
+
+    history = {
+      path = "$HOME/.zsh_hist";
+      size = 999999999;
+      save = 999999999;
+    };
 
     # Home Manager emits .zshrc sections by order: autosuggestions (700), Oh My
     # Zsh (800), custom plugins (900), initContent (1000), and
@@ -73,6 +85,7 @@ in
     shellAliases = {
       p3 = "type p3; python3";
       pv = "type pv; p3 -m venv .venv && . .venv/bin/activate";
+      upgrade = ''export KESL_EULA_AGREED=Yes KESL_PRIVACY_POLICY_AGREED=Yes KESL_USE_KSN=Yes && sudo -E bash -c "apt update && apt upgrade && apt dist-upgrade && apt autoremove"'';
     };
 
     initContent = lib.mkMerge [
@@ -89,6 +102,16 @@ in
         mkcd() {
           mkdir -p "$1"
           cd "$1"
+        }
+
+        temp() {
+          cd "$(mktemp -d)"
+          chmod -R 0700 .
+          if [[ $# -eq 1 ]]; then
+            mkdir -p "$1"
+            cd "$1"
+            chmod -R 0700 .
+          fi
         }
       '')
     ];
