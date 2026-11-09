@@ -31,6 +31,7 @@ in
 
   home.sessionVariables = {
     PYTHONPYCACHEPREFIX = "/tmp/pycache";
+    NIXPKGS_ALLOW_UNFREE = "1";
     VISUAL = "vim";
     EDITOR = "vim";
     LC_ALL = "en_US.utf8";
@@ -94,10 +95,11 @@ in
     ];
 
     shellAliases = {
+      ai = "aichat";
       p3 = "type p3; python3";
       pv = "type pv; p3 -m venv .venv && . .venv/bin/activate";
       space = "lsblk -e7 -o NAME,TYPE,SIZE,FSAVAIL,MOUNTPOINTS";
-      upgrade = ''export KESL_EULA_AGREED=Yes KESL_PRIVACY_POLICY_AGREED=Yes KESL_USE_KSN=Yes && sudo -E bash -c "apt update && apt upgrade && apt dist-upgrade && apt autoremove"'';
+      upgrade = ''export KESL_EULA_AGREED=Yes && export KESL_PRIVACY_POLICY_AGREED=Yes && export KESL_USE_KSN=Yes && sudo --preserve-env=KESL_EULA_AGREED,KESL_PRIVACY_POLICY_AGREED,KESL_USE_KSN bash -c "apt update && apt upgrade && apt dist-upgrade && apt autoremove"'';
     };
 
     initContent = lib.mkMerge [
@@ -123,6 +125,122 @@ in
             mkdir -p "$1"
             cd "$1"
             chmod -R 0700 .
+          fi
+        }
+
+        prompt() {
+          local include_all_text=false
+          local find_args=()
+          local first=true
+
+          local ignored_dirs=(
+            node_modules
+            .git
+            .venv
+            venv
+            __pycache__
+            .pytest_cache
+            .mypy_cache
+            .ruff_cache
+            .tox
+            .nox
+            .cache
+            .next
+            .nuxt
+            .turbo
+            .gradle
+            .idea
+            dist
+            build
+            target
+            coverage
+          )
+
+          local prune_args=()
+          for dir in "''${ignored_dirs[@]}"
+          do
+            if [ "''${#prune_args[@]}" -gt 0 ]; then
+              prune_args+=(-o)
+            fi
+            prune_args+=(-name "$dir")
+          done
+
+          shell_quote() {
+            printf "'"
+            printf "%s" "$1" | sed "s/'/'\\\\''/g"
+            printf "'"
+          }
+
+          emit_file() {
+            local f="$1"
+            local rel="''${f#./}"
+            local dir
+            dir="$(dirname -- "$rel")"
+
+            local hash
+            hash="$(printf "%s" "$rel" | cksum | awk '{print $1}')"
+            local delim="__PROMPT_FILE_''${hash}__"
+            local n=0
+
+            while grep -qxF "$delim" "$f" 2>/dev/null
+            do
+              n=$((n + 1))
+              delim="__PROMPT_FILE_''${n}_''${hash}__"
+            done
+
+            printf 'mkdir -p -- %s\n' "$(shell_quote "$dir")"
+            printf 'cat > %s <<'\''%s'\''\n' "$(shell_quote "$rel")" "$delim"
+
+            cat "$f"
+
+            if [ -s "$f" ]; then
+              local last_byte
+              last_byte="$(tail -c 1 -- "$f" | od -An -tx1 | tr -d '[:space:]')"
+
+              if [ "$last_byte" != "0a" ]; then
+                printf '\n'
+              fi
+            fi
+
+            printf '%s\n\n' "$delim"
+          }
+
+          emit_prompt_function() {
+            typeset -f prompt
+            printf '\n\n'
+          }
+
+          emit_prompt_function
+
+          if [ "$#" -eq 0 ]; then
+            include_all_text=true
+          else
+            for ext in "$@"
+            do
+              if [ "$first" = true ]; then
+                first=false
+              else
+                find_args+=(-o)
+              fi
+
+              find_args+=(-name "*.''${ext}")
+            done
+          fi
+
+          if [ "$include_all_text" = true ]; then
+            find . -type d \( "''${prune_args[@]}" \) -prune -o -type f -print0 |
+            while IFS= read -r -d "" f
+            do
+              if file --mime-type -b "$f" | grep -q '^text/'; then
+                emit_file "$f"
+              fi
+            done
+          else
+            find . -type d \( "''${prune_args[@]}" \) -prune -o -type f \( "''${find_args[@]}" \) -print0 |
+            while IFS= read -r -d "" f
+            do
+              emit_file "$f"
+            done
           fi
         }
       '')
