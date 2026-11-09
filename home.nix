@@ -18,6 +18,7 @@ in
   home.username = username;
   home.homeDirectory = homedir;
   home.stateVersion = "26.05";
+  home-manager.backupFileExtension = "backup";
   programs.home-manager.enable = true;
 
   home.packages = with pkgs; [
@@ -95,6 +96,7 @@ in
     shellAliases = {
       p3 = "type p3; python3";
       pv = "type pv; p3 -m venv .venv && . .venv/bin/activate";
+      space = "lsblk -e7 -o NAME,TYPE,SIZE,FSAVAIL,MOUNTPOINTS";
       upgrade = ''export KESL_EULA_AGREED=Yes KESL_PRIVACY_POLICY_AGREED=Yes KESL_USE_KSN=Yes && sudo -E bash -c "apt update && apt upgrade && apt dist-upgrade && apt autoremove"'';
     };
 
