@@ -166,9 +166,7 @@ in
           done
 
           shell_quote() {
-            printf "'"
-            printf "%s" "$1" | sed "s/'/'\\\\''/g"
-            printf "'"
+            printf '%s' "'" && printf "%s" "$1" | sed "s/'/'\\\\''/g" && printf '%s' "'"
           }
 
           emit_file() {
