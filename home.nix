@@ -18,7 +18,6 @@ in
   home.username = username;
   home.homeDirectory = homedir;
   home.stateVersion = "26.05";
-  home-manager.backupFileExtension = "backup";
   programs.home-manager.enable = true;
 
   home.packages = with pkgs; [
@@ -166,7 +165,7 @@ in
           done
 
           shell_quote() {
-            printf '%s' "'" && printf "%s" "$1" | sed "s/'/'\\\\''/g" && printf '%s' "'"
+            printf '%s' "''${(qq)1}"
           }
 
           emit_file() {
@@ -187,7 +186,7 @@ in
             done
 
             printf 'mkdir -p -- %s\n' "$(shell_quote "$dir")"
-            printf 'cat > %s <<'\''%s'\''\n' "$(shell_quote "$rel")" "$delim"
+            printf "cat > %s <<'%s'\n" "$(shell_quote "$rel")" "$delim"
 
             cat "$f"
 

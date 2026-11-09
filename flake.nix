@@ -54,7 +54,7 @@
               exit 1
             fi
             echo "Applying Home Manager configuration (${system}) for $USER in $HOME"
-            ${homeConfigurations.${system}.activationPackage}/activate
+            HOME_MANAGER_BACKUP_EXT=backup ${homeConfigurations.${system}.activationPackage}/activate
             echo 'Applied. Start a new Zsh session (exec zsh).'
           '';
         in
