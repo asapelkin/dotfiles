@@ -18,6 +18,7 @@ in
   home.username = username;
   home.homeDirectory = homedir;
   home.stateVersion = "26.05";
+  xdg.mime.enable = false;
   programs.home-manager.enable = true;
 
   home.packages = with pkgs; [
