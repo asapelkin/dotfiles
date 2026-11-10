@@ -62,7 +62,7 @@ in
     syntaxHighlighting.enable = true;
 
     history = {
-      path = "$HOME/.zsh_hist";
+      path = "$HOME/.zsh_history";
       size = 999999999;
       save = 999999999;
     };
