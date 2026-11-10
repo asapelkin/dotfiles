@@ -243,6 +243,10 @@ in
           fi
         }
       '')
+      # Machine-specific settings that are not tracked in this repository.
+      (lib.mkOrder 1100 ''
+        [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
+      '')
     ];
   };
 }
