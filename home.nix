@@ -110,6 +110,7 @@ in
       # cannot duplicate this entry. Kept here because session variables are
       # only sourced once per environment and may be reordered by login shells.
       (lib.mkOrder 1000 ''
+        parse_git_dirty() { :; }
         path=("$HOME/.local/bin" $path)
 
         mkcd() {
