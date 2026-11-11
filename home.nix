@@ -257,6 +257,11 @@ in
             done
           fi
         }
+
+        bak() {
+          cp "$1" "$1".bak
+        }
+
       '')
       # Machine-specific settings that are not tracked in this repository.
       (lib.mkOrder 1100 ''
