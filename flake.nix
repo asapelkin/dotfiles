@@ -7,7 +7,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     fzf-zsh-plugin = {
       url = "github:unixorn/fzf-zsh-plugin";
       flake = false;
@@ -18,6 +17,18 @@
     };
     command-time = {
       url = "github:popstas/zsh-command-time";
+      flake = false;
+    };
+    zsh-just-let-me-edit-my-files = {
+      url = "github:asapelkin/zsh-just-let-me-edit-my-files";
+      flake = false;
+    };
+    zsh-autosuggestions = {
+      url = "github:zsh-users/zsh-autosuggestions";
+      flake = false;
+    };
+    zsh-syntax-highlighting = {
+      url = "github:zsh-users/zsh-syntax-highlighting";
       flake = false;
     };
   };

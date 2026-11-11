@@ -92,6 +92,21 @@ in
         src = inputs.command-time;
         file = "command-time.plugin.zsh";
       }
+      {
+        name = "zsh-just-let-me-edit-my-files";
+        src = inputs.zsh-just-let-me-edit-my-files;
+        file = "zsh-just-let-me-edit-my-files.plugin.zsh";
+      }
+      {
+        name = "zsh-autosuggestions";
+        src = inputs.zsh-autosuggestions;
+        file = "zsh-autosuggestions.plugin.zsh";
+      }
+      {
+        name = "zsh-syntax-highlighting";
+        src = inputs.zsh-syntax-highlighting;
+        file = "zsh-syntax-highlighting.zsh";
+      }
     ];
 
     shellAliases = {
