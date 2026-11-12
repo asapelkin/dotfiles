@@ -24,6 +24,11 @@ in
   home.packages = with pkgs; [
     git
     fzf
+    bat
+    ripgrep
+    fd
+    btop
+    yazi
     python3
     nodejs
     vim
@@ -260,6 +265,10 @@ in
 
         bak() {
           cp "$1" "$1".bak
+        }
+
+        bat() {
+          command bat --paging=never --style=plain "$@"
         }
 
       '')
