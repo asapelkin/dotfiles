@@ -74,7 +74,10 @@
         "fzf-zsh-plugin": "fzf-zsh-plugin",
         "home-manager": "home-manager",
         "nixpkgs": "nixpkgs",
-        "you-should-use": "you-should-use"
+        "you-should-use": "you-should-use",
+        "zsh-autosuggestions": "zsh-autosuggestions",
+        "zsh-just-let-me-edit-my-files": "zsh-just-let-me-edit-my-files",
+        "zsh-syntax-highlighting": "zsh-syntax-highlighting"
       }
     },
     "you-should-use": {
@@ -90,6 +93,54 @@
       "original": {
         "owner": "MichaelAquilina",
         "repo": "zsh-you-should-use",
+        "type": "github"
+      }
+    },
+    "zsh-autosuggestions": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1750781703,
+        "narHash": "sha256-KmkXgK1J6iAyb1FtF/gOa0adUnh1pgFsgQOUnNngBaE=",
+        "owner": "zsh-users",
+        "repo": "zsh-autosuggestions",
+        "rev": "85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "zsh-users",
+        "repo": "zsh-autosuggestions",
+        "type": "github"
+      }
+    },
+    "zsh-just-let-me-edit-my-files": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780305950,
+        "narHash": "sha256-XE5Dak/uK7qqSYG0ziG62dWM4hmJ51woMPKl5+y2YBo=",
+        "owner": "asapelkin",
+        "repo": "zsh-just-let-me-edit-my-files",
+        "rev": "a1a6acd2c9d5e289e0a1ac471f6b7ba7fd8289c6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "asapelkin",
+        "repo": "zsh-just-let-me-edit-my-files",
+        "type": "github"
+      }
+    },
+    "zsh-syntax-highlighting": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791566209,
+        "narHash": "sha256-ekCMmobd/OaCYStIoEx0l0HEn+6cD98jPlG8lMLl5bQ=",
+        "owner": "zsh-users",
+        "repo": "zsh-syntax-highlighting",
+        "rev": "e6683f20e5c38d3e5447f45845d04ddda75d0f23",
+        "type": "github"
+      },
+      "original": {
+        "owner": "zsh-users",
+        "repo": "zsh-syntax-highlighting",
         "type": "github"
       }
     }
