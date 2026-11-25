@@ -4,12 +4,12 @@
 
 ```bash
 sudo apt update
-sudo apt install -y ansible git curl ca-certificates file
+sudo apt install -y ansible git curl ca-certificates file unzip
 ansible-pull -U https://github.com/asapelkin/dotfiles.git -K dotfiles.yml
 exec zsh
 ```
 
-Пакеты устанавливаются из apt; отсутствующие в репозитории apt — из Homebrew.
+Пакеты устанавливаются из apt; отсутствующие в репозитории apt - из Homebrew.
 Homebrew устанавливается автоматически, если его нет.
 
 Чтобы не устанавливать и не использовать Homebrew в playbook:
@@ -35,6 +35,19 @@ exec zsh
 Пропустите установку Homebrew, если он уже установлен.
 При `-e use_homebrew=false` playbook не устанавливает пакеты и на macOS.
 
+## GitHub mirror
+
+По умолчанию Zsh-плагины устанавливаются и обновляются через Git.
+
+Если задана переменная окружения `GITHUB_MIRROR`, плагины скачиваются
+в виде ZIP-архивов с указанного зеркала.
+
+```bash
+export GITHUB_MIRROR=https://mirror.example.com/github
+ansible-playbook -K dotfiles.yml
+exec zsh
+```
+
 ## Переход с Home Manager
 
 До запуска Ansible найдите ссылки Home Manager в домашнем каталоге:
@@ -50,8 +63,8 @@ find "$HOME" -type l -exec sh -c '
 ' sh {} +
 ```
 
-Проверьте список и удалите **только ссылки от старой конфигурации**, например
-`~/.zshrc`, `~/.zshenv`, `~/.zprofile`, по одной:
+Проверьте список и удалите **только ссылки от старой конфигурации**,
+например `~/.zshrc`, `~/.zshenv`, `~/.zprofile`, по одной:
 
 ```bash
 rm -i "$HOME/.zshrc"
@@ -75,19 +88,28 @@ ansible-pull -U https://github.com/asapelkin/dotfiles.git -K dotfiles.yml
 exec zsh
 ```
 
-На macOS `-K` не требуется. Для локального репозитория: `ansible-playbook -K dotfiles.yml`.
-Существующий `.zshrc` сохраняется в резервной копии; локальные настройки можно
-поместить в `~/.zshrc.local`.
+На macOS `-K` не требуется.
 
-Для машины без интернета нужны доступные зеркала не только apt, но и этого
-репозитория, репозиториев Zsh-плагинов и при необходимости Homebrew. Передайте
-адрес зеркала репозитория в `-U`, а общий адрес GitHub-совместимого зеркала
-плагинов — через `-e github_base=https://mirror.example`. Если нужен другой
-адрес установщика Homebrew, передайте `-e homebrew_installer=URL`; зеркала
-самого Homebrew настраиваются отдельно через переменные его окружения.
+Для локального репозитория:
+
+```bash
+ansible-playbook -K dotfiles.yml
+exec zsh
+```
+
+Для машины с GitHub-зеркалом:
+
+```bash
+GITHUB_MIRROR=https://mirror.example.com/github \
+  ansible-playbook -K -e use_homebrew=false dotfiles.yml
+```
+
+Существующий `.zshrc` сохраняется в резервной копии; локальные настройки
+можно поместить в `~/.zshrc.local`.
 
 ## Проверка
 
 ```bash
+ansible-playbook --syntax-check dotfiles.yml
 tests/test-eval.sh
 ```
