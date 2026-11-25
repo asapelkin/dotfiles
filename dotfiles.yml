@@ -1,0 +1,332 @@
+---
+- hosts: localhost
+  connection: local
+  vars:
+    github_base: https://github.com
+    github_mirror: "{{ lookup('env', 'GITHUB_MIRROR') | trim | regex_replace('/+$', '') }}"
+    homebrew_installer: https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh
+    use_homebrew: true
+    home: "{{ lookup('env', 'HOME') }}"
+    dotfiles_dir: "{{ home }}/.local/share/dotfiles"
+
+    packages:
+      - { apt: git, brew: git }
+      - { apt: fzf, brew: fzf }
+      - { apt: bat, brew: bat }
+      - { apt: ripgrep, brew: ripgrep }
+      - { apt: fd-find, brew: fd }
+      - { apt: btop, brew: btop }
+      - { brew: yazi }
+      - { apt: python3, brew: python }
+      - { apt: python3-venv, brew: python }
+      - { apt: nodejs, brew: node }
+      - { apt: vim, brew: vim }
+      - { apt: zsh, brew: zsh }
+
+    plugins:
+      - { repo: ohmyzsh/ohmyzsh, name: oh-my-zsh, branch: master }
+      - { repo: zsh-users/zsh-history-substring-search, name: zsh-history-substring-search, branch: master }
+      - { repo: zsh-users/zsh-autosuggestions, name: zsh-autosuggestions, branch: master }
+      - { repo: zsh-users/zsh-syntax-highlighting, name: zsh-syntax-highlighting, branch: master }
+      - { repo: popstas/zsh-command-time, name: command-time, branch: master }
+      - { repo: asapelkin/zsh-just-let-me-edit-my-files, name: zsh-just-let-me-edit-my-files, branch: main }
+      - { repo: unixorn/fzf-zsh-plugin, name: fzf-zsh-plugin, branch: main }
+      - { repo: MichaelAquilina/zsh-you-should-use, name: you-should-use, branch: master }
+
+  tasks:
+    - name: Check platform and user
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.user_id != 'root'
+          - home | length > 0
+          - ansible_facts.os_family in ['Debian', 'Darwin']
+      tags: always
+
+    - name: Update apt cache
+      ansible.builtin.command: apt-get update
+      become: true
+      changed_when: false
+      when: ansible_facts.os_family == 'Debian'
+      tags: packages
+
+    - name: Check apt packages
+      ansible.builtin.command: "apt-cache policy {{ item.apt }}"
+      environment:
+        LC_ALL: C
+      register: apt_packages
+      changed_when: false
+      loop: "{{ packages | selectattr('apt', 'defined') | list }}"
+      when: ansible_facts.os_family == 'Debian'
+      tags: packages
+
+    - name: Select packages
+      ansible.builtin.set_fact:
+        apt_install: >-
+          {{
+            apt_packages.results
+            | selectattr('stdout', 'search', 'Candidate: [0-9]')
+            | map(attribute='item.apt')
+            | list
+          }}
+        apt_unavailable: >-
+          {{
+            apt_packages.results
+            | rejectattr('stdout', 'search', 'Candidate: [0-9]')
+            | map(attribute='item.apt')
+            | list
+          }}
+        brew_install: >-
+          {{
+            (
+              (
+                apt_packages.results
+                | rejectattr('stdout', 'search', 'Candidate: [0-9]')
+                | map(attribute='item.brew')
+                | list
+              )
+              +
+              (
+                packages
+                | rejectattr('apt', 'defined')
+                | map(attribute='brew')
+                | list
+              )
+            )
+            | unique | list
+          }}
+      when: ansible_facts.os_family == 'Debian'
+      tags: packages
+
+    - name: Report selected packages
+      ansible.builtin.debug:
+        msg:
+          apt: "{{ apt_install }}"
+          brew: "{{ brew_install }}"
+      when: ansible_facts.os_family == 'Debian'
+      tags: packages
+
+    - name: Install apt packages
+      ansible.builtin.apt:
+        name: "{{ apt_install }}"
+        state: present
+      become: true
+      when: ansible_facts.os_family == 'Debian'
+      tags: packages
+
+    - name: Select macOS packages
+      ansible.builtin.set_fact:
+        brew_install: "{{ packages | map(attribute='brew') | unique | list }}"
+      when: ansible_facts.os_family == 'Darwin'
+      tags: packages
+
+    - name: Report packages skipped without Homebrew
+      ansible.builtin.debug:
+        msg: "Homebrew disabled; packages skipped: {{ brew_install | join(', ') }}"
+      when:
+        - not (use_homebrew | bool)
+        - brew_install | length > 0
+      tags: packages
+
+    - name: Install packages through Homebrew
+      when:
+        - use_homebrew | bool
+        - brew_install | length > 0
+      tags: packages
+      block:
+        - name: Locate Homebrew
+          ansible.builtin.stat:
+            path: "{{ item }}"
+          loop:
+            - /home/linuxbrew/.linuxbrew/bin/brew
+            - /opt/homebrew/bin/brew
+            - /usr/local/bin/brew
+          register: brew_locations
+
+        - name: Install Homebrew
+          when: brew_locations.results | selectattr('stat.exists') | list | length == 0
+          block:
+            - name: Create download directory
+              ansible.builtin.file:
+                path: "{{ dotfiles_dir }}"
+                state: directory
+                mode: "0755"
+
+            - name: Download Homebrew installer
+              ansible.builtin.get_url:
+                url: "{{ homebrew_installer }}"
+                dest: "{{ dotfiles_dir }}/homebrew-install.sh"
+                mode: "0755"
+
+            - name: Run Homebrew installer
+              ansible.builtin.command:
+                argv:
+                  - bash
+                  - "{{ dotfiles_dir }}/homebrew-install.sh"
+              environment:
+                NONINTERACTIVE: "1"
+              changed_when: true
+
+        - name: Locate installed Homebrew
+          ansible.builtin.stat:
+            path: "{{ item }}"
+          loop:
+            - /home/linuxbrew/.linuxbrew/bin/brew
+            - /opt/homebrew/bin/brew
+            - /usr/local/bin/brew
+          register: brew_locations
+
+        - name: Select Homebrew executable
+          ansible.builtin.set_fact:
+            brew: "{{ brew_locations.results | selectattr('stat.executable', 'defined') | selectattr('stat.executable') | map(attribute='item') | first }}"
+
+        - name: Check Homebrew packages
+          ansible.builtin.command: "{{ brew }} list --versions {{ item }}"
+          environment:
+            HOMEBREW_NO_AUTO_UPDATE: "1"
+          loop: "{{ brew_install }}"
+          register: brew_packages
+          changed_when: false
+          failed_when: brew_packages.rc not in [0, 1]
+
+        - name: Install missing Homebrew packages
+          ansible.builtin.command: "{{ brew }} install {{ item.item }}"
+          environment:
+            HOMEBREW_NO_AUTO_UPDATE: "1"
+          loop: "{{ brew_packages.results }}"
+          when: item.rc == 1
+          changed_when: true
+
+    - name: Create plugin directory
+      ansible.builtin.file:
+        path: "{{ dotfiles_dir }}"
+        state: directory
+        mode: "0755"
+      tags: plugins
+
+    - name: Report plugin installation method
+      ansible.builtin.debug:
+        msg: >-
+          {{
+            'Installing plugins from ZIP archives: ' ~ github_mirror
+            if github_mirror | length > 0
+            else 'Installing plugins through Git: ' ~ github_base
+          }}
+      tags: plugins
+
+    - name: Install plugins through Git
+      when: github_mirror | length == 0
+      tags: plugins
+      block:
+        - name: Check for previously installed ZIP plugins
+          ansible.builtin.stat:
+            path: "{{ dotfiles_dir }}/{{ item.name }}/.dotfiles-archive"
+          loop: "{{ plugins }}"
+          loop_control:
+            label: "{{ item.name }}"
+          register: archive_plugins
+
+        - name: Remove ZIP installations before switching to Git
+          ansible.builtin.file:
+            path: "{{ dotfiles_dir }}/{{ item.item.name }}"
+            state: absent
+          loop: "{{ archive_plugins.results }}"
+          loop_control:
+            label: "{{ item.item.name }}"
+          when: item.stat.exists
+
+        - name: Clone or update Zsh plugins
+          ansible.builtin.git:
+            repo: "{{ github_base }}/{{ item.repo }}.git"
+            dest: "{{ dotfiles_dir }}/{{ item.name }}"
+            version: "{{ item.version | default('HEAD') }}"
+          loop: "{{ plugins }}"
+          loop_control:
+            label: "{{ item.name }}"
+
+    - name: Install plugins from GitHub mirror
+      when: github_mirror | length > 0
+      tags: plugins
+      block:
+        - name: Install ZIP extraction dependencies
+          ansible.builtin.apt:
+            name:
+              - curl
+              - unzip
+            state: present
+          become: true
+          when: ansible_facts.os_family == 'Debian'
+
+        - name: Download and install Zsh plugin archives
+          ansible.builtin.shell: |
+            set -euo pipefail
+
+            destination="$PLUGIN_DIRECTORY/$PLUGIN_NAME"
+
+            tmp_dir="$(mktemp -d "$PLUGIN_DIRECTORY/.download.XXXXXXXX")"
+
+            cleanup() {
+              if [[ -e "$tmp_dir/previous" || -L "$tmp_dir/previous" ]]; then
+                if [[ ! -e "$destination" && ! -L "$destination" ]]; then
+                  mv "$tmp_dir/previous" "$destination" || return 1
+                fi
+              fi
+
+              rm -rf "$tmp_dir"
+            }
+
+            trap cleanup EXIT
+
+            echo "Downloading $PLUGIN_URL"
+
+            curl \
+              --fail \
+              --location \
+              --retry 2 \
+              --connect-timeout 15 \
+              --max-time 300 \
+              --output "$tmp_dir/plugin.zip" \
+              "$PLUGIN_URL"
+
+            mkdir -p "$tmp_dir/extracted"
+
+            unzip -q \
+              "$tmp_dir/plugin.zip" \
+              -d "$tmp_dir/extracted"
+
+            shopt -s nullglob dotglob
+            roots=("$tmp_dir/extracted/"*)
+
+            if [[ ! -d "${roots[0]:-}" || -n "${roots[1]:-}" ]]; then
+              echo "Unexpected ZIP archive structure: $PLUGIN_URL" >&2
+              exit 1
+            fi
+
+            extracted="${roots[0]}"
+
+            printf '%s\n' "$PLUGIN_URL" > "$extracted/.dotfiles-archive"
+
+            if [[ -e "$destination" || -L "$destination" ]]; then
+              mv "$destination" "$tmp_dir/previous"
+            fi
+
+            mv "$extracted" "$destination"
+
+            echo "Installed $PLUGIN_NAME"
+          args:
+            executable: /bin/bash
+          environment:
+            PLUGIN_DIRECTORY: "{{ dotfiles_dir }}"
+            PLUGIN_NAME: "{{ item.name }}"
+            PLUGIN_URL: "{{ github_mirror }}/{{ item.repo }}/archive/refs/heads/{{ item.branch }}.zip"
+          loop: "{{ plugins }}"
+          loop_control:
+            label: "{{ item.name }} ({{ item.branch }})"
+          changed_when: true
+
+    - name: Install Zsh configuration
+      ansible.builtin.copy:
+        src: .zshrc
+        dest: "{{ home }}/.zshrc"
+        mode: "0644"
+        backup: true
+      tags: config
