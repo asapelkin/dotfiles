@@ -26,6 +26,7 @@ source "$HOME/.local/share/dotfiles/command-time/command-time.plugin.zsh"
 source "$HOME/.local/share/dotfiles/zsh-just-let-me-edit-my-files/zsh-just-let-me-edit-my-files.plugin.zsh"
 
 alias ai='aichat'
+alias oc='opencode'
 alias p3='type p3; python3'
 alias pv='type pv; p3 -m venv .venv && . .venv/bin/activate'
 alias space='lsblk -e7 -o NAME,TYPE,SIZE,FSAVAIL,MOUNTPOINTS'
